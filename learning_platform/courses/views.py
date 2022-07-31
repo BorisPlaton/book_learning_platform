@@ -10,6 +10,7 @@ from django.views.generic.base import TemplateResponseMixin, View, TemplateView
 
 from courses.forms import ModuleFormSet
 from courses.models import Course, Module, Content, Subject
+from students.forms import CourseEnrollForm
 
 
 class OwnerMixin:
@@ -91,9 +92,9 @@ class ContentCreateUpdateView(TemplateView):
             obj = form.save(commit=False)
             obj.owner = request.user
             obj.save()
-            if not id:
-                Content.object.create(module=self.module, item=obj)
-            return redirect('module_content_list', self.module.id)
+            if not id_:
+                Content.objects.create(module=self.module, item=obj)
+            return redirect('courses:module_content_list', self.module.id)
         return self.render_to_response({'form': form, 'object': self.obj})
 
     def get(self, request, module_id, model_name, pk=None):
@@ -123,7 +124,7 @@ class ContentDeleteView(View):
         module = content.module
         content.item.delete()
         content.delete()
-        return redirect('module_content_list', module.id)
+        return redirect('courses:module_content_list', module.id)
 
 
 class ModuleContentListView(TemplateView):
@@ -168,3 +169,10 @@ class CourseListView(TemplateView):
 class CourseDetailView(DetailView):
     model = Course
     template_name = 'courses/course_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CourseDetailView, self).get_context_data(**kwargs)
+        context['enroll_form'] = CourseEnrollForm(
+            initial={'course': self.object}
+        )
+        return context
